@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Reservation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>Restaurant Table Reservation</h1>
+
+  <form id="resForm">
+    <label>Name: <input name="name" required /></label>
+    <label>Phone: <input name="phone" required /></label>
+    <label>Email: <input name="email" type="email" /></label>
+    <label>Party Size: <input name="partySize" type="number" min="1" required /></label>
+    <label>Date & Time: <input name="date" type="datetime-local" required /></label>
+    <label>Notes: <input name="notes" /></label>
+    <br />
+    <button type="submit">Reserve</button>
+  </form>
+
+  <h2>Today's Reservations</h2>
+  <ul id="list"></ul>
+
+  <script>
+  async function loadReservations() {
+    const res = await fetch(`/api/reservations`);
+    const data = await res.json();
+    const ul = document.getElementById("list");
+    ul.innerHTML = "";
+
+    if (data.length === 0) {
+      ul.innerHTML = "<li>No reservations found.</li>";
+      return;
+    }
+
+    data.forEach(r => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${r.name}</strong> (${r.partySize} people)<br>
+        📞 ${r.phone} | 📧 ${r.email || "-"} <br>
+        📅 ${new Date(r.date).toLocaleString()} <br>
+        📝 ${r.notes || "—"}
+      `;
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById("resForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+    body.partySize = Number(body.partySize);
+
+    await fetch("/api/reservations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    e.target.reset();
+    loadReservations();
+  });
+
+  loadReservations();
+</script>
+
+</body>
+</html>
